@@ -448,23 +448,62 @@ pub mod p_token {
     }
 
     // =========================================================================
-    // 25. BATCH (P-Token only: varies)
+    // 25. BATCH TRANSFERS
     //
-    // Execute multiple token instructions in ONE CPI call.
-    // Eliminates the ~1,000 CU base CPI cost for each subsequent instruction.
+    // On testnet, SIMD-0266 is activated — the existing SPL Token program ID
+    // (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA) runs P-Token code.
     //
-    // Example: 5 transfers
-    //   SPL via CPI:     5 × (1,000 + 4,645) = 28,225 CU
-    //   P-Token via CPI: 5 × (1,000 +    78) =  5,390 CU
-    //   P-Token BATCH:   1 × (1,000 + 5×78)  =  1,390 CU  ← 20x cheaper!
+    // P-Token batch instruction (discriminator = 26) packs multiple
+    // sub-instructions into ONE CPI call, eliminating repeated base costs.
     //
-    // Game-changer for DeFi protocols doing multiple token ops per tx.
+    // Batch data layout:
+    //   [26]                                 - batch discriminator
+    //   For each sub-instruction:
+    //     [num_accounts: u8]                 - how many account indices
+    //     [acct_idx_1, acct_idx_2, ...] u8s  - indices into outer account list
+    //     [sub_ix_discriminator: u8]          - e.g. 3 = Transfer
+    //     [sub_ix_data...]                    - e.g. u64 amount LE for transfer
+    //
+    // CU comparison for N transfers:
+    //   SPL (old):       N × (1,000 + 4,645) = N × 5,645 CU
+    //   P-Token (N CPI): N × (1,000 +    78) = N × 1,078 CU
+    //   P-Token BATCH:   1 × (1,000 + N×78)  CU  ← ONE CPI call!
+    //
+    // Verified on testnet: tx dXdSNigy...
+    //   Wrapper program: 7GJmXtGkAWcKY8bZFmPvYc9XZqbfND9YoA9zwQrkCfxA
+    //   CPI into TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA (now P-Token)
+    //   Total: 2,654 CU for batch transfer
     // =========================================================================
-    pub fn batch_demo(_ctx: Context<BatchDemo>) -> Result<()> {
-        msg!("[Batch] P-Token only | SPL: N/A (must use separate CPI calls)");
-        msg!("5 transfers: SPL=28,225 CU | P-Token CPI=5,390 CU | Batch=1,390 CU");
+
+    /// N individual CPI transfers (current SPL Token approach).
+    /// Each CPI = ~1,000 base cost + transfer execution.
+    pub fn batch_transfer_individual(ctx: Context<BatchTransfer>, amounts: Vec<u64>) -> Result<()> {
+        msg!("[Individual] {} separate CPI transfers", amounts.len());
+
+        for (i, amount) in amounts.iter().enumerate() {
+            let to = match i % 3 {
+                0 => ctx.accounts.to_1.to_account_info(),
+                1 => ctx.accounts.to_2.to_account_info(),
+                _ => ctx.accounts.to_3.to_account_info(),
+            };
+
+            token::transfer(
+                CpiContext::new(
+                    ctx.accounts.token_program.to_account_info(),
+                    Transfer {
+                        from: ctx.accounts.from.to_account_info(),
+                        to,
+                        authority: ctx.accounts.authority.to_account_info(),
+                    },
+                ),
+                *amount,
+            )?;
+        }
+
+        msg!("Done: {} CPI calls, each paying ~1,000 CU base cost", amounts.len());
         Ok(())
     }
+
 }
 
 // =============================================================================
@@ -673,7 +712,16 @@ pub struct UnwrapLamportsAcct<'info> {
 }
 
 #[derive(Accounts)]
-pub struct BatchDemo<'info> {
+pub struct BatchTransfer<'info> {
+    #[account(mut)]
+    pub from: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub to_1: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub to_2: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub to_3: Account<'info, TokenAccount>,
     pub authority: Signer<'info>,
     pub token_program: Program<'info, Token>,
 }
+

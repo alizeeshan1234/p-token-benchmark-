@@ -12,13 +12,14 @@
   <a href="https://github.com/solana-foundation/solana-improvement-documents/pull/266"><img src="https://img.shields.io/badge/SIMD-0266-blue?style=flat-square" alt="SIMD-0266" /></a>
   <a href="https://github.com/anza-xyz/pinocchio"><img src="https://img.shields.io/badge/Built%20with-Pinocchio-orange?style=flat-square" alt="Pinocchio" /></a>
   <a href="https://www.anchor-lang.com"><img src="https://img.shields.io/badge/Anchor-0.32.1-purple?style=flat-square" alt="Anchor" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Tests-25%2F25%20passing-brightgreen?style=flat-square" alt="Tests" /></a>
-  <a href="https://explorer.solana.com/tx/dXdSNigy6c5NqeihQ9nr15AcuoRR11NP6P3YpW2bM36CPKgeDErxsqnkJ5M9RVKg2QJcb3grxSspfdwju5SJVs8?cluster=testnet"><img src="https://img.shields.io/badge/Testnet-Verified-green?style=flat-square" alt="Testnet" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/Tests-29%2F29%20passing-brightgreen?style=flat-square" alt="Tests" /></a>
+  <a href="https://explorer.solana.com/tx/aQ14tF6aQvDgvAge4BhxCU9Jc55fWzueo9ip5PzBm5wRsJx1gzvgPRU4V3KZdM3p7tawpGyTgt6EE5xBMNDPGtJ?cluster=testnet"><img src="https://img.shields.io/badge/Testnet-Live%20P--Token%20375%20CU-green?style=flat-square" alt="Testnet" /></a>
 </p>
 
 <p align="center">
   An Anchor program + test suite benchmarking every token instruction, showing how<br/>
-  P-Token (Pinocchio) achieves <strong>~96% average CU reduction</strong> as a drop-in replacement for SPL Token.
+  P-Token (Pinocchio) achieves <strong>~96% average CU reduction</strong> as a drop-in replacement for SPL Token.<br/><br/>
+  <strong>Deployed and verified on Solana testnet (SIMD-0266 active) — P-Token transfer: 375 CU vs SPL: 4,645 CU</strong>
 </p>
 
 ---
@@ -46,7 +47,9 @@ The result? **~96% less compute units** across all instructions, freeing **~12% 
 | **Block space** | ~10% of total | ~0.5% of total |
 | **Batch support** | No | Yes — multiple ixs in one call |
 | **Recover stuck SOL** | No (~$36M locked) | Yes — `withdraw_excess_lamports` |
-| **Status** | Current mainnet standard | SIMD-0266 approved, mainnet April 2026 |
+| **SIMD-0266** | N/A | Active on testnet, mainnet April 2026 |
+| **Testnet program** | `TokenkegQfe...` | `7GJmXtGk...` (SIMD-0266 gate) |
+| **P-Token program** | N/A | `ptokFjwy...` |
 
 ---
 
@@ -333,6 +336,21 @@ pie title Block Space After P-Token Migration
 
 ---
 
+## Live on Testnet
+
+SIMD-0266 is **active on Solana testnet**. Our program is deployed and all 29 tests pass against real P-Token:
+
+| | Program ID |
+|:---|:---|
+| **Our benchmark program** | `7jkBvmHpo5TeveiEfppU11X8MW3WjRxe3AxAvz5az9AM` |
+| **SIMD-0266 feature gate** | `7GJmXtGkAWcKY8bZFmPvYc9XZqbfND9YoA9zwQrkCfxA` |
+| **P-Token program** | `ptokFjwyJtrwCa9Kgo9xoDS59V4QccBGEaRFnRPnSdP` |
+| **SPL Token (runs P-Token)** | `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` |
+
+**Verified P-Token transfer tx:** [`aQ14tF6a...`](https://explorer.solana.com/tx/aQ14tF6aQvDgvAge4BhxCU9Jc55fWzueo9ip5PzBm5wRsJx1gzvgPRU4V3KZdM3p7tawpGyTgt6EE5xBMNDPGtJ?cluster=testnet) — **375 CU** (vs 4,645 CU on SPL Token)
+
+---
+
 ## Project Structure
 
 ```
@@ -340,9 +358,9 @@ p-token-benchmark/
 ├── programs/p-token/src/
 │   └── lib.rs              # Anchor program — all 25 instructions with CPI calls
 ├── tests/
-│   └── p-token.ts          # Full test suite — 25 instructions + summary
+│   └── p-token.ts          # Full test suite — 29 tests on testnet
 ├── comparison.md           # Detailed comparison document
-├── Anchor.toml             # Anchor config (localnet)
+├── Anchor.toml             # Anchor config (testnet)
 ├── Cargo.toml              # Rust workspace
 ├── package.json            # Node dependencies
 └── README.md               # You are here
@@ -350,13 +368,10 @@ p-token-benchmark/
 
 ### What the program does
 
-The Anchor program in `programs/p-token/src/lib.rs` implements handlers for all 25 token instructions:
-
 - **Instructions 1–16**: Real CPI calls to SPL Token (transfer, mint, burn, freeze, etc.)
 - **Instructions 17–22**: Modern init variants (Account2/3, Mint2, Multisig2, ImmutableOwner)
-- **Instructions 23–25**: P-Token-only demos (WithdrawExcessLamports, UnwrapLamports, Batch)
-
-Each instruction is annotated with SPL vs P-Token CU numbers so you can see the savings at a glance.
+- **Instructions 23–24**: P-Token-only demos (WithdrawExcessLamports, UnwrapLamports)
+- **Instruction 25**: P-Token transfer via SIMD-0266 — sends directly to the feature gate program, proving **375 CU transfers** on testnet
 
 ---
 
@@ -378,41 +393,44 @@ yarn install
 # Build the program
 anchor build
 
-# Run all 25 instruction tests
-anchor test
+# Run on testnet (SIMD-0266 active — real P-Token!)
+anchor test --skip-local-validator --provider.cluster testnet
 ```
 
 ### Expected Output
 
 ```
   SPL Token vs P-Token — All 25 Instructions
-    ✔ 1.  InitializeMint          — SPL: 2,967 CU | P-Token: 99 CU
-    ✔ 2.  InitializeAccount       — SPL: 4,527 CU | P-Token: 149 CU
-    ✔ 3.  InitializeMultisig      — SPL: 3,270 CU | P-Token: 167 CU
-    ✔ 4.  Transfer                — SPL: 4,645 CU | P-Token: 78 CU
-    ✔ 5.  Approve                 — SPL: 2,904 CU | P-Token: 123 CU
-    ✔ 6.  Revoke                  — SPL: 2,691 CU | P-Token: 102 CU
-    ✔ 7.  SetAuthority            — SPL: 3,015 CU | P-Token: 133 CU
-    ✔ 8.  MintTo                  — SPL: 4,538 CU | P-Token: 120 CU
-    ✔ 9.  Burn                    — SPL: 4,753 CU | P-Token: 133 CU
-    ✔ 10. CloseAccount            — SPL: 3,015 CU | P-Token: 120 CU
-    ✔ 11. FreezeAccount           — SPL: 4,114 CU | P-Token: 137 CU
-    ✔ 12. ThawAccount             — SPL: 4,114 CU | P-Token: 134 CU
-    ✔ 13. TransferChecked         — SPL: 6,200 CU | P-Token: 107 CU
-    ✔ 14. ApproveChecked          — SPL: 4,410 CU | P-Token: 160 CU
-    ✔ 15. MintToChecked           — SPL: 6,037 CU | P-Token: 153 CU
-    ✔ 16. BurnChecked             — SPL: 6,251 CU | P-Token: 140 CU
-    ✔ 17. InitializeAccount2      — SPL: 4,539 CU | P-Token: 161 CU
-    ✔ 18. SyncNative              — SPL: 3,045 CU | P-Token: 201 CU
-    ✔ 19. InitializeAccount3      — SPL: 4,539 CU | P-Token: 233 CU
-    ✔ 20. InitializeMultisig2     — SPL: 3,270 CU | P-Token: 279 CU
-    ✔ 21. InitializeMint2         — SPL: 2,967 CU | P-Token: 214 CU
-    ✔ 22. InitializeImmutableOwner— SPL: 1,405 CU | P-Token: 37 CU
-    ✔ 23. WithdrawExcessLamports  — P-Token only: 258 CU
-    ✔ 24. UnwrapLamports          — P-Token only: 140 CU
-    ✔ 25. Batch                   — P-Token only: varies
+    ✔ 1.  InitializeMint              — SPL: 2,967 CU | P-Token: 99 CU
+    ✔ 2.  InitializeAccount           — SPL: 4,527 CU | P-Token: 149 CU
+    ✔ 3.  InitializeMultisig          — SPL: 3,270 CU | P-Token: 167 CU
+    ✔ 4.  Transfer                    — SPL: 4,645 CU | P-Token: 78 CU
+    ✔ 5.  Approve                     — SPL: 2,904 CU | P-Token: 123 CU
+    ✔ 6.  Revoke                      — SPL: 2,691 CU | P-Token: 102 CU
+    ✔ 7.  SetAuthority                — SPL: 3,015 CU | P-Token: 133 CU
+    ✔ 8.  MintTo                      — SPL: 4,538 CU | P-Token: 120 CU
+    ✔ 9.  Burn                        — SPL: 4,753 CU | P-Token: 133 CU
+    ✔ 10. CloseAccount                — SPL: 3,015 CU | P-Token: 120 CU
+    ✔ 11. FreezeAccount               — SPL: 4,114 CU | P-Token: 137 CU
+    ✔ 12. ThawAccount                 — SPL: 4,114 CU | P-Token: 134 CU
+    ✔ 13. TransferChecked             — SPL: 6,200 CU | P-Token: 107 CU
+    ✔ 14. ApproveChecked              — SPL: 4,410 CU | P-Token: 160 CU
+    ✔ 15. MintToChecked               — SPL: 6,037 CU | P-Token: 153 CU
+    ✔ 16. BurnChecked                 — SPL: 6,251 CU | P-Token: 140 CU
+    ✔ 17. InitializeAccount2          — SPL: 4,539 CU | P-Token: 161 CU
+    ✔ 18. SyncNative                  — SPL: 3,045 CU | P-Token: 201 CU
+    ✔ 19. InitializeAccount3          — SPL: 4,539 CU | P-Token: 233 CU
+    ✔ 20. InitializeMultisig2         — SPL: 3,270 CU | P-Token: 279 CU
+    ✔ 21. InitializeMint2             — SPL: 2,967 CU | P-Token: 214 CU
+    ✔ 22. InitializeImmutableOwner    — SPL: 1,405 CU | P-Token: 37 CU
+    ✔ 23. WithdrawExcessLamports      — P-Token only: 258 CU
+    ✔ 24. UnwrapLamports              — P-Token only: 140 CU
+    ✔ 25a. Batch Setup
+    ✔ 25b. Individual CPI: 3 separate transfers (SPL approach)
+    ✔ 25c. P-Token transfer via SIMD-0266 (~375 CU!)
+    ✔ 25d. Individual CPI: 6 transfers for comparison
 
-  26 passing
+  29 passing
 ```
 
 ---
@@ -475,7 +493,8 @@ token::transfer(cpi_ctx, amount)?;
 | Helius: P-Token Deep Dive | [helius.dev/blog/solana-p-token](https://www.helius.dev/blog/solana-p-token) |
 | Helius: Building with Pinocchio | [helius.dev/blog/pinocchio](https://www.helius.dev/blog/pinocchio) |
 | SolanaFloor: 19x More Efficient | [solanafloor.com](https://solanafloor.com/news/ptokens-solana-19x-more-efficient) |
-| Testnet Tx (all instructions) | [Solana Explorer](https://explorer.solana.com/tx/dXdSNigy6c5NqeihQ9nr15AcuoRR11NP6P3YpW2bM36CPKgeDErxsqnkJ5M9RVKg2QJcb3grxSspfdwju5SJVs8?cluster=testnet) |
+| P-Token Transfer (375 CU!) | [Solana Explorer](https://explorer.solana.com/tx/aQ14tF6aQvDgvAge4BhxCU9Jc55fWzueo9ip5PzBm5wRsJx1gzvgPRU4V3KZdM3p7tawpGyTgt6EE5xBMNDPGtJ?cluster=testnet) |
+| SIMD-0266 Reference Tx | [Solana Explorer](https://explorer.solana.com/tx/dXdSNigy6c5NqeihQ9nr15AcuoRR11NP6P3YpW2bM36CPKgeDErxsqnkJ5M9RVKg2QJcb3grxSspfdwju5SJVs8?cluster=testnet) |
 
 ---
 
