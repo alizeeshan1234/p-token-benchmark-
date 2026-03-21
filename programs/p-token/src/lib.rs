@@ -8,44 +8,9 @@ use anchor_spl::token_interface;
 
 declare_id!("7jkBvmHpo5TeveiEfppU11X8MW3WjRxe3AxAvz5az9AM");
 
-/// ============================================================================
-/// SPL TOKEN vs P-TOKEN: FULL INSTRUCTION SET COMPARISON
-/// ============================================================================
-///
-/// P-Token is a Pinocchio-based, compute-optimized DROP-IN REPLACEMENT
-/// for SPL Token. Same account layouts. Same instructions. ~95% less CU.
-///
-/// ┌───────────────────────────┬────────────┬────────────┬──────────┐
-/// │ Instruction               │ SPL Token  │ P-Token    │ Savings  │
-/// ├───────────────────────────┼────────────┼────────────┼──────────┤
-/// │ InitializeMint            │   2,967 CU │     99 CU  │  96.7%   │
-/// │ InitializeAccount         │   4,527 CU │    149 CU  │  96.7%   │
-/// │ InitializeMultisig        │   3,270 CU │    167 CU  │  94.9%   │
-/// │ Transfer                  │   4,645 CU │     78 CU  │  98.3%   │
-/// │ Approve                   │   2,904 CU │    123 CU  │  95.8%   │
-/// │ Revoke                    │   2,691 CU │    102 CU  │  96.2%   │
-/// │ SetAuthority              │   3,015 CU │    133 CU  │  95.6%   │
-/// │ MintTo                    │   4,538 CU │    120 CU  │  97.4%   │
-/// │ Burn                      │   4,753 CU │    133 CU  │  97.2%   │
-/// │ CloseAccount              │   3,015 CU │    120 CU  │  96.0%   │
-/// │ FreezeAccount             │   4,114 CU │    137 CU  │  96.7%   │
-/// │ ThawAccount               │   4,114 CU │    134 CU  │  96.7%   │
-/// │ TransferChecked           │   6,200 CU │    107 CU  │  98.3%   │
-/// │ ApproveChecked            │   4,410 CU │    160 CU  │  96.4%   │
-/// │ MintToChecked             │   6,037 CU │    153 CU  │  97.5%   │
-/// │ BurnChecked               │   6,251 CU │    140 CU  │  97.8%   │
-/// │ InitializeAccount2        │   4,539 CU │    161 CU  │  96.5%   │
-/// │ SyncNative                │   3,045 CU │    201 CU  │  93.4%   │
-/// │ InitializeAccount3        │   4,539 CU │    233 CU  │  94.9%   │
-/// │ InitializeMultisig2       │   3,270 CU │    279 CU  │  91.5%   │
-/// │ InitializeMint2           │   2,967 CU │    214 CU  │  92.8%   │
-/// │ InitializeImmutableOwner  │   1,405 CU │     37 CU  │  97.4%   │
-/// ├───────────────────────────┼────────────┼────────────┼──────────┤
-/// │ NEW: WithdrawExcessLamp.  │     N/A    │    258 CU  │   NEW    │
-/// │ NEW: UnwrapLamports       │     N/A    │    140 CU  │   NEW    │
-/// │ NEW: Batch                │     N/A    │  varies    │   NEW    │
-/// └───────────────────────────┴────────────┴────────────┴──────────┘
-/// ============================================================================
+/// SPL Token vs P-Token benchmark program.
+/// Demonstrates all 25 token instructions with CU comparisons.
+/// See README.md for full comparison tables, graphs, and architecture details.
 
 #[program]
 pub mod p_token {
