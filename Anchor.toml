@@ -11,11 +11,14 @@ p_token = "7jkBvmHpo5TeveiEfppU11X8MW3WjRxe3AxAvz5az9AM"
 [programs.testnet]
 p_token = "7jkBvmHpo5TeveiEfppU11X8MW3WjRxe3AxAvz5az9AM"
 
+[programs.devnet]
+p_token = "7jkBvmHpo5TeveiEfppU11X8MW3WjRxe3AxAvz5az9AM"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "testnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

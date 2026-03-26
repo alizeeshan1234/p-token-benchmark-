@@ -11,7 +11,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 
-// SIMD-0266 feature gate program on testnet
+// SIMD-0266 feature gate program on devnet
 const SIMD0266_PROGRAM = new PublicKey("7GJmXtGkAWcKY8bZFmPvYc9XZqbfND9YoA9zwQrkCfxA");
 const PTOKEN_PROGRAM = new PublicKey("ptokFjwyJtrwCa9Kgo9xoDS59V4QccBGEaRFnRPnSdP");
 
@@ -594,7 +594,7 @@ describe("SPL Token vs P-Token — All 25 Instructions", () => {
   // =========================================================================
   // BATCH TRANSFER TESTS (25)
   //
-  // On testnet (SIMD-0266 active), TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
+  // On devnet (SIMD-0266 active), TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
   // IS the P-Token — same program ID, new Pinocchio implementation.
   // Batch instruction (discriminator 26) packs N transfers into 1 CPI.
   //
